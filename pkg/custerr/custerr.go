@@ -9,8 +9,9 @@ import (
 )
 
 type Error struct {
-	e     interface{}
-	stack []string
+	e         interface{}
+	prevError error
+	stack     []string
 }
 
 func (e *Error) Error() string {
@@ -19,11 +20,48 @@ func (e *Error) Error() string {
 	for _, s := range e.stack {
 		_, _ = b.WriteString(fmt.Sprintf("\t%v\n", s))
 	}
+	if e.prevError != nil {
+		b.WriteString(fmt.Sprintf("\n%v\n", e.prevError.Error()))
+	}
 	return b.String()
 }
+
+func NewWithParentError(e interface{}, prevError error) *Error {
+	err := internalNew(e, 3)
+	err.prevError = prevError
+	return err
+}
+
 func New(e interface{}) *Error {
+	return internalNew(e, 3)
+	/*
+		pc := make([]uintptr, 100)
+		max := runtime.Callers(2, pc)
+		pc1 := pc[0:max]
+
+		stack := make([]string, 0)
+		frames := runtime.CallersFrames(pc1)
+		for {
+			frame, more := frames.Next()
+			if !more {
+				break
+			}
+			if strings.Contains(frame.File, "runtime/") {
+				continue
+			}
+			_, name := packageAndName(frame.Function)
+			stack = append(stack, fmt.Sprintf("%v(%v) %v() %v", frame.File, frame.Line, name, sourceLine(frame)))
+		}
+		return &Error{
+			e:     e,
+			stack: stack,
+		}
+	*/
+}
+
+func internalNew(e interface{}, skip int) *Error {
 	pc := make([]uintptr, 100)
-	max := runtime.Callers(2, pc)
+	max := runtime.Callers(skip, pc)
 	pc1 := pc[0:max]
 
 	stack := make([]string, 0)
