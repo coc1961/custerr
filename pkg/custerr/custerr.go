@@ -3,108 +3,131 @@ package custerr
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"reflect"
 	"runtime"
-	"strings"
+
+	"github.com/go-errors/errors"
 )
 
+var MaxStackDepth = 50
+
 type Error struct {
-	e         interface{}
-	prevError error
-	stack     []string
+	Err    error
+	parent []error
+	stack  []uintptr
+	frames []errors.StackFrame
 }
 
-func (e *Error) Error() string {
-	b := bytes.Buffer{}
-	_, _ = b.WriteString(fmt.Sprintf("%v\n", e.e))
-	for _, s := range e.stack {
-		_, _ = b.WriteString(fmt.Sprintf("\t%v\n", s))
+func New(e interface{}, parent ...error) *Error {
+	var err error
+
+	switch e := e.(type) {
+	case error:
+		err = e
+	default:
+		err = fmt.Errorf("%v", e)
 	}
-	if e.prevError != nil {
-		b.WriteString(fmt.Sprintf("\n%v\n", e.prevError.Error()))
-	}
-	return b.String()
-}
 
-func NewWithParentError(e interface{}, prevError error) *Error {
-	err := internalNew(e, 3)
-	err.prevError = prevError
-	return err
-}
-
-func New(e interface{}) *Error {
-	return internalNew(e, 3)
-	/*
-		pc := make([]uintptr, 100)
-		max := runtime.Callers(2, pc)
-		pc1 := pc[0:max]
-
-		stack := make([]string, 0)
-		frames := runtime.CallersFrames(pc1)
-		for {
-			frame, more := frames.Next()
-			if !more {
-				break
-			}
-			if strings.Contains(frame.File, "runtime/") {
-				continue
-			}
-			_, name := packageAndName(frame.Function)
-			stack = append(stack, fmt.Sprintf("%v(%v) %v() %v", frame.File, frame.Line, name, sourceLine(frame)))
-		}
-		return &Error{
-			e:     e,
-			stack: stack,
-		}
-	*/
-}
-
-func internalNew(e interface{}, skip int) *Error {
-	pc := make([]uintptr, 100)
-	max := runtime.Callers(skip, pc)
-	pc1 := pc[0:max]
-
-	stack := make([]string, 0)
-	frames := runtime.CallersFrames(pc1)
-	for {
-		frame, more := frames.Next()
-		if !more {
-			break
-		}
-		if strings.Contains(frame.File, "runtime/") {
-			continue
-		}
-		_, name := packageAndName(frame.Function)
-		stack = append(stack, fmt.Sprintf("%v(%v) %v() %v", frame.File, frame.Line, name, sourceLine(frame)))
-	}
+	stack := make([]uintptr, MaxStackDepth)
+	length := runtime.Callers(2, stack[:])
 	return &Error{
-		e:     e,
-		stack: stack,
+		Err:    err,
+		stack:  stack[:length],
+		parent: parent,
 	}
 }
 
-func sourceLine(frame runtime.Frame) string {
-	data, err := ioutil.ReadFile(frame.File)
-	if err != nil {
-		return ""
+func Wrap(e interface{}, skip int) *Error {
+	if e == nil {
+		return nil
 	}
-	lines := bytes.Split(data, []byte{'\n'})
-	if frame.Line <= 0 || frame.Line >= len(lines) {
-		return ""
+
+	var err error
+
+	switch e := e.(type) {
+	case *Error:
+		return e
+	case error:
+		err = e
+	default:
+		err = fmt.Errorf("%v", e)
 	}
-	return string(bytes.Trim(lines[frame.Line-1], " \t"))
+
+	stack := make([]uintptr, MaxStackDepth)
+	length := runtime.Callers(2+skip, stack[:])
+	return &Error{
+		Err:   err,
+		stack: stack[:length],
+	}
 }
 
-func packageAndName(name string) (string, string) {
-	pkg := ""
-	if lastslash := strings.LastIndex(name, "/"); lastslash >= 0 {
-		pkg += name[:lastslash] + "/"
-		name = name[lastslash+1:]
+func Is(e error, original error) bool {
+
+	if e == original {
+		return true
 	}
-	if period := strings.Index(name, "."); period >= 0 {
-		pkg += name[:period]
-		name = name[period+1:]
+
+	if e, ok := e.(*Error); ok {
+		return Is(e.Err, original)
 	}
-	name = strings.Replace(name, "·", ".", -1)
-	return pkg, name
+
+	if original, ok := original.(*Error); ok {
+		return Is(e, original.Err)
+	}
+
+	return false
+}
+
+func Errorf(format string, a ...interface{}) *Error {
+	return Wrap(fmt.Errorf(format, a...), 1)
+}
+
+func (err *Error) Error() string {
+
+	msg := err.Err.Error()
+
+	msg = fmt.Sprintf("%s\n%v\n", msg, string(err.Stack()))
+
+	if len(err.parent) > 0 {
+		for _, e := range err.parent {
+			msg = fmt.Sprintf("%s\n%v", msg, e)
+		}
+		msg += "\n"
+	}
+
+	return msg
+}
+
+func (err *Error) Stack() []byte {
+	buf := bytes.Buffer{}
+
+	for _, frame := range err.StackFrames() {
+		buf.WriteString(frame.String())
+	}
+
+	return buf.Bytes()
+}
+
+func (err *Error) Callers() []uintptr {
+	return err.stack
+}
+
+func (err *Error) ErrorStack() string {
+	return err.TypeName() + " " + err.Error() + "\n" + string(err.Stack())
+}
+
+func (err *Error) StackFrames() []errors.StackFrame {
+	if err.frames == nil {
+		err.frames = make([]errors.StackFrame, len(err.stack))
+
+		for i, pc := range err.stack {
+			err.frames[i] = errors.NewStackFrame(pc)
+		}
+	}
+
+	return err.frames
+}
+
+func (err *Error) TypeName() string {
+	return reflect.TypeOf(err.Err).String()
 }
