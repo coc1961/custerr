@@ -1,4 +1,4 @@
-package custerr
+package errores
 
 import (
 	"bytes"
