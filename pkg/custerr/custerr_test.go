@@ -116,8 +116,9 @@ func TestError_Unwrap(t *testing.T) {
 func TestError_Error(t *testing.T) {
 	baseError := errors.New("base")
 	err := NewWithError("new error", baseError)
+	err1 := fmt.Errorf("other test %w", err)
 
-	e := err.Error()
+	e := err1.Error()
 
 	fmt.Println(e)
 	if !strings.Contains(e, "/custerr/custerr_test.go:") {

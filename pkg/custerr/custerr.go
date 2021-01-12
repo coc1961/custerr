@@ -159,11 +159,7 @@ func (err *Error) Error() string {
 		if er, ok := err.parent.(*Error); ok {
 			b.WriteString(fmt.Sprintf("From:\n%v", er))
 		} else {
-			b.WriteString(fmt.Sprintf("From:\n%v", er))
-			er := Unwrap(err)
-			if er != nil {
-				b.WriteString(fmt.Sprintf("From:\n%v", er))
-			}
+			b.WriteString(fmt.Sprintf("From:\n%v\n", err.Err))
 		}
 		b.WriteString(fmt.Sprintf("From:\n%v", err.parent))
 		b.WriteString("\n")
