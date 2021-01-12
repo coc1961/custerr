@@ -38,11 +38,16 @@ func NewWithError(e interface{}, parent error) *Error {
 	switch e := e.(type) {
 	case error:
 		err = e
+		e2 := Unwrap(err)
+		if e2 != nil && parent == nil {
+			parent = e2
+		}
 	default:
 		err = fmt.Errorf("%v", e)
 	}
 	stack := make([]uintptr, MaxStackDepth)
 	length := runtime.Callers(2, stack[:])
+
 	return &Error{
 		Err:    err,
 		stack:  stack[:length],
@@ -113,12 +118,6 @@ func travelErrors(e error, fn func(e error) bool) bool {
 		if !travelErrors(e.Err, fn) {
 			return false
 		}
-		if e := Unwrap(e); e != nil {
-			if !travelErrors(e, fn) {
-				return false
-			}
-		}
-		return true
 	}
 	if e := Unwrap(e); e != nil {
 		if !travelErrors(e, fn) {
@@ -209,21 +208,6 @@ func (err *Error) HasTag(tag Tag) bool {
 
 func (err *Error) Error() string {
 	return err.Err.Error()
-	/*
-		b := bytes.Buffer{}
-		b.WriteString(err.ErrorStack())
-		if err.parent != nil {
-			if er, ok := err.parent.(*Error); ok {
-				b.WriteString(fmt.Sprintf("From:\n%v", er))
-			} else {
-				b.WriteString(fmt.Sprintf("From:\n%v\n", err.Err))
-			}
-			b.WriteString(fmt.Sprintf("From:\n%v", err.parent))
-			b.WriteString("\n")
-		}
-		b.WriteString("\n")
-		return b.String()
-	*/
 }
 
 func (err *Error) Unwrap() error {
