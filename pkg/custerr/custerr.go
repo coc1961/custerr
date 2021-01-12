@@ -83,7 +83,7 @@ func Is(e error, original interface{}) bool {
 		}
 	case error:
 		found := false
-		travel(e, func(e error) bool {
+		travelErrors(e, func(e error) bool {
 			if e == ori {
 				found = true
 				return false
@@ -108,23 +108,23 @@ func Is(e error, original interface{}) bool {
 	return false
 }
 
-func travel(e error, fn func(e error) bool) bool {
+func travelErrors(e error, fn func(e error) bool) bool {
 	if !fn(e) {
 		return false
 	}
 	if e, ok := e.(*Error); ok {
-		if !travel(e.Err, fn) {
+		if !travelErrors(e.Err, fn) {
 			return false
 		}
 		if e := Unwrap(e); e != nil {
-			if !travel(e, fn) {
+			if !travelErrors(e, fn) {
 				return false
 			}
 		}
 		return true
 	}
 	if e := Unwrap(e); e != nil {
-		if !travel(e, fn) {
+		if !travelErrors(e, fn) {
 			return false
 		}
 	}
@@ -146,7 +146,7 @@ func Unwrap(err error) error {
 
 func Tags(err error) []Tag {
 	tags := make(map[string]Tag)
-	travel(err, func(e error) bool {
+	travelErrors(err, func(e error) bool {
 		if e, ok := e.(*Error); ok {
 			for _, t := range e.tags {
 				tags[t.String()] = t
