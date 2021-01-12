@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew1(t *testing.T) {
+func TestNew(t *testing.T) {
 	type args struct {
 		e      interface{}
 		parent error
@@ -139,19 +139,19 @@ func TestError_Unwrap(t *testing.T) {
 
 func TestError_Error(t *testing.T) {
 	baseError := errors.New("base")
-	err := NewWithError("new error", baseError)
+	err, c := NewWithError("new error", baseError), callers()
 	err1 := fmt.Errorf("other test %w", err)
 
 	e := ErrorStack(err1).Error()
-	fmt.Println(e)
+	frame := NewStackFrame(c[0])
 
-	if !strings.Contains(e, "/errores_test.go:") {
+	if !strings.Contains(e, fmt.Sprintf("%s:%d", frame.File, frame.LineNumber)) {
 		t.Error("TestError_Error error")
 	}
 	if !strings.Contains(e, "base") {
 		t.Error("TestError_Error error")
 	}
-	if !strings.Contains(e, `err := NewWithError("new error", baseError)`) {
+	if !strings.Contains(e, `err, c := NewWithError("new error", baseError), callers()`) {
 		t.Error("TestError_Error error")
 	}
 }
