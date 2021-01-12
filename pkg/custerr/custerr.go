@@ -6,15 +6,9 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
-
-	"github.com/go-errors/errors"
 )
 
 var MaxStackDepth = 50
-
-type StackFrame struct {
-	errors.StackFrame
-}
 
 type Tag string
 
@@ -114,13 +108,6 @@ func travelErrors(e error, fn func(e error) bool) bool {
 	if !fn(e) {
 		return false
 	}
-	/*
-		if e, ok := e.(*Error); ok {
-			if !travelErrors(e.Err, fn) {
-				return false
-			}
-		}
-	*/
 	if e := Unwrap(e); e != nil {
 		if !travelErrors(e, fn) {
 			return false
@@ -130,9 +117,6 @@ func travelErrors(e error, fn func(e error) bool) bool {
 }
 
 func Unwrap(err error) error {
-	if err == nil {
-		return nil
-	}
 	u, ok := err.(interface {
 		Unwrap() error
 	})
@@ -216,9 +200,6 @@ func (err *Error) Error() string {
 }
 
 func (err *Error) Unwrap() error {
-	if err == nil {
-		return nil
-	}
 	if err.parent != nil {
 		return err.parent
 	}
@@ -252,7 +233,7 @@ func (err *Error) StackFrames() []StackFrame {
 		err.frames = make([]StackFrame, len(err.stack))
 
 		for i, pc := range err.stack {
-			err.frames[i] = StackFrame{errors.NewStackFrame(pc)}
+			err.frames[i] = NewStackFrame(pc)
 		}
 	}
 

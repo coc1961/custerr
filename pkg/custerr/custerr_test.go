@@ -47,15 +47,18 @@ func TestNew1(t *testing.T) {
 				parent: errors.New("parent"),
 			},
 		},
+		{
+			name: "New From Error with parent",
+			args: args{
+				e:      fmt.Errorf("error1 %w", errors.New("test error")),
+				parent: nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewWithError(tt.args.e, tt.args.parent)
 			assert.NotNil(t, got)
-			/*
-				fmt.Println(tt.name, "===================================")
-				fmt.Println(New("Other Error", got))
-			*/
 		})
 	}
 }
@@ -113,6 +116,10 @@ func TestIs(t *testing.T) {
 	}
 
 	if !Is(err4, err1) {
+		t.Error("TestIs error")
+	}
+
+	if Is(base1Error, nil) {
 		t.Error("TestIs error")
 	}
 
