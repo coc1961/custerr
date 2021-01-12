@@ -75,22 +75,30 @@ func Wrap(e interface{}) *Error {
 	}
 }
 
-func Is(e error, original error) bool {
-	for {
-		if e == original {
-			return true
-		}
+func Is(e error, original interface{}) bool {
+	switch ori := original.(type) {
+	case Tag:
 		if e, ok := e.(*Error); ok {
-			return Is(e.Err, original)
+			return e.HasTag(ori)
 		}
+	case error:
+		for {
+			if e == ori {
+				return true
+			}
+			if e, ok := e.(*Error); ok {
+				return Is(e.Err, ori)
+			}
 
-		if original, ok := original.(*Error); ok {
-			return Is(e, original.Err)
-		}
-		if e = Unwrap(e); e == nil {
-			return false
+			if ori, ok := original.(*Error); ok {
+				return Is(e, ori.Err)
+			}
+			if e = Unwrap(e); e == nil {
+				return false
+			}
 		}
 	}
+	return false
 }
 
 func Unwrap(err error) error {
