@@ -38,7 +38,8 @@ func TestNew1(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := New(tt.args.e)
 			assert.NotNil(t, got)
-			//fmt.Println(New("Other Error", got))
+			fmt.Println(New("Other Error", got))
+			//os.Exit(0)
 		})
 	}
 }
@@ -58,7 +59,7 @@ func TestStackFormat(t *testing.T) {
 
 		bs := [][]uintptr{e.stack, expected}
 
-		if err := compareStacks(bs[0][2:], bs[1][2:]); err != nil {
+		if err := compareStacks(bs[0][2:], bs[1][3:]); err != nil {
 
 			t.Errorf("Stack didn't match %v %v", bs[0], bs[1])
 

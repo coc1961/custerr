@@ -79,21 +79,22 @@ func Is(e error, original error) bool {
 }
 
 func Errorf(format string, a ...interface{}) *Error {
-	return Wrap(fmt.Errorf(format, a...), 1)
+	return Wrap(fmt.Errorf(format, a...), 2)
 }
 
 func (err *Error) Error() string {
 
 	msg := err.Err.Error()
 
-	msg = fmt.Sprintf("%s\n%v\n", msg, string(err.Stack()))
+	msg = fmt.Sprintf("%s\n%v", msg, string(err.Stack()))
 
 	if len(err.parent) > 0 {
 		for _, e := range err.parent {
-			msg = fmt.Sprintf("%s\n%v", msg, e)
+			msg = fmt.Sprintf("%sFrom:\n%v", msg, e)
+			msg += "\n"
 		}
-		msg += "\n"
 	}
+	msg += "\n"
 
 	return msg
 }
@@ -102,6 +103,12 @@ func (err *Error) Stack() []byte {
 	buf := bytes.Buffer{}
 
 	for _, frame := range err.StackFrames() {
+		/*
+			if strings.Contains(frame.String(), "/runtime/") ||
+				strings.Contains(frame.String(), "/testing/") {
+				continue
+			}
+		*/
 		buf.WriteString(frame.String())
 	}
 
