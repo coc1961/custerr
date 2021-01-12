@@ -268,7 +268,7 @@ func Test_travelErrors(t *testing.T) {
 		mp = append(mp, e)
 		return true
 	})
-	if len(mp) != 5 {
+	if len(mp) != 3 {
 		t.Error("Test_travelErrors error")
 	}
 }

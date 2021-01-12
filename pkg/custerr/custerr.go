@@ -114,11 +114,13 @@ func travelErrors(e error, fn func(e error) bool) bool {
 	if !fn(e) {
 		return false
 	}
-	if e, ok := e.(*Error); ok {
-		if !travelErrors(e.Err, fn) {
-			return false
+	/*
+		if e, ok := e.(*Error); ok {
+			if !travelErrors(e.Err, fn) {
+				return false
+			}
 		}
-	}
+	*/
 	if e := Unwrap(e); e != nil {
 		if !travelErrors(e, fn) {
 			return false
@@ -145,6 +147,9 @@ func Tags(err error) []Tag {
 	travelErrors(err, func(e error) bool {
 		if e, ok := e.(*Error); ok {
 			for _, t := range e.tags {
+				tags[t.String()] = t
+			}
+			for _, t := range Tags(e.Err) {
 				tags[t.String()] = t
 			}
 		}
@@ -217,7 +222,7 @@ func (err *Error) Unwrap() error {
 	if err.parent != nil {
 		return err.parent
 	}
-	return nil
+	return Unwrap(err.Err)
 }
 
 func (err *Error) Stack() []byte {
