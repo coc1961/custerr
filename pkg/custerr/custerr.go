@@ -12,11 +12,21 @@ import (
 
 var MaxStackDepth = 50
 
+type Tag string
+
+func (t Tag) String() string {
+	return string(t)
+}
+func (t Tag) Is(tag interface{}) bool {
+	return fmt.Sprint(tag) == t.String()
+}
+
 type Error struct {
 	Err    error
 	parent error
 	stack  []uintptr
 	frames []errors.StackFrame
+	tags   []Tag
 }
 
 func New(e interface{}, parent ...error) *Error {
@@ -50,7 +60,11 @@ func Wrap(e interface{}) *Error {
 	case *Error:
 		return e
 	default:
-		err := New(e)
+		var err1 error
+		if e, ok := e.(error); ok {
+			err1 = Unwrap(e)
+		}
+		err := New(e, err1)
 		err.stack = err.stack[1:]
 		return err
 	}
@@ -82,6 +96,35 @@ func Unwrap(err error) error {
 		return nil
 	}
 	return u.Unwrap()
+}
+
+func (err *Error) AddTags(tags ...Tag) *Error {
+	err.tags = append(err.tags, tags...)
+	return err
+}
+
+func (err *Error) Tags() []Tag {
+	tags := make([]Tag, 0)
+	var e error = err
+	for {
+		if e, ok := e.(*Error); ok {
+			tags = append(tags, e.tags...)
+		}
+		e = Unwrap(e)
+		if e == nil {
+			break
+		}
+	}
+	return tags
+}
+
+func (err *Error) HasTag(tag Tag) bool {
+	for _, t := range err.Tags() {
+		if t.Is(tag) {
+			return true
+		}
+	}
+	return false
 }
 
 func (err *Error) Error() string {

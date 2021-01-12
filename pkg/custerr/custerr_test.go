@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	errors1 "github.com/go-errors/errors"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -169,4 +168,35 @@ func callersSkip(skip int) []uintptr {
 	callers := make([]uintptr, MaxStackDepth)
 	length := runtime.Callers(skip+2, callers[:])
 	return callers[:length]
+}
+
+func TestError_HasTag(t *testing.T) {
+	err1 := New("error1").AddTags(Tag("database_error"))
+	err2 := New("error2", err1).AddTags("service_error")
+	if !err1.HasTag(Tag("database_error")) {
+		t.Error("TestError_HasTag error")
+	}
+	if !err2.HasTag(Tag("database_error")) {
+		t.Error("TestError_HasTag error")
+	}
+	if err1.HasTag(Tag("error_tag")) {
+		t.Error("TestError_HasTag error")
+	}
+	if err2.HasTag(Tag("error_tag")) {
+		t.Error("TestError_HasTag error")
+	}
+	if err1.HasTag(Tag("service_error")) {
+		t.Error("TestError_HasTag error")
+	}
+	if !err2.HasTag(Tag("service_error")) {
+		t.Error("TestError_HasTag error")
+	}
+}
+
+func TestError_Tags(t *testing.T) {
+	err1 := New("error1").AddTags(Tag("database_error"))
+	err2 := New("error2", err1).AddTags("service_error")
+	err3 := fmt.Errorf("error3 %w", err2)
+
+	fmt.Println(Wrap(err3).Tags())
 }
