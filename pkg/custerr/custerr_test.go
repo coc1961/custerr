@@ -80,9 +80,13 @@ func TestIs(t *testing.T) {
 	otherError := errors.New("base")
 	base1Error := fmt.Errorf("error1 %w", baseError)
 
-	err1 := New(baseError)
+	err1 := New(baseError).AddTags(Tag("test_tag"))
 	err2 := New(err1)
 	err3 := New(err2)
+
+	if !Is(base1Error, baseError) {
+		t.Error("TestIs error")
+	}
 
 	if !Is(err2, baseError) {
 		t.Error("TestIs error")
@@ -99,6 +103,19 @@ func TestIs(t *testing.T) {
 	if Is(err2, otherError) {
 		t.Error("TestIs error")
 	}
+	if !Is(err3, Tag("test_tag")) {
+		t.Error("TestIs error")
+	}
+
+	err4 := NewWithError("error4", err1)
+	if !Is(err4, Tag("test_tag")) {
+		t.Error("TestIs error")
+	}
+
+	if !Is(err4, err1) {
+		t.Error("TestIs error")
+	}
+
 }
 
 func TestError_Unwrap(t *testing.T) {
@@ -193,6 +210,13 @@ func TestError_HasTag(t *testing.T) {
 	if !err2.HasTag(Tag("service_error")) {
 		t.Error("TestError_HasTag error")
 	}
+
+	err3 := New("error1").AddTags(Tag("database_error"))
+	err4 := New(err3)
+	if !err4.HasTag(Tag("database_error")) {
+		t.Error("TestError_HasTag error")
+	}
+
 }
 
 func TestError_Tags(t *testing.T) {

@@ -82,26 +82,59 @@ func Is(e error, original interface{}) bool {
 			return e.HasTag(ori)
 		}
 	case error:
-		for {
+		found := false
+		travel(e, func(e error) bool {
 			if e == ori {
-				return true
+				found = true
+				return false
 			}
 			if e, ok := e.(*Error); ok {
-				return Is(e.Err, ori)
+				if Is(e.Err, ori) {
+					found = true
+					return false
+				}
 			}
 
 			if ori, ok := original.(*Error); ok {
-				return Is(e, ori.Err)
+				if Is(e, ori.Err) {
+					found = true
+					return false
+				}
 			}
-			if e = Unwrap(e); e == nil {
-				return false
-			}
-		}
+			return true
+		})
+		return found
 	}
 	return false
 }
 
+func travel(e error, fn func(e error) bool) bool {
+	if !fn(e) {
+		return false
+	}
+	if e, ok := e.(*Error); ok {
+		if !travel(e.Err, fn) {
+			return false
+		}
+		if e := Unwrap(e); e != nil {
+			if !travel(e, fn) {
+				return false
+			}
+		}
+		return true
+	}
+	if e := Unwrap(e); e != nil {
+		if !travel(e, fn) {
+			return false
+		}
+	}
+	return true
+}
+
 func Unwrap(err error) error {
+	if err == nil {
+		return nil
+	}
 	u, ok := err.(interface {
 		Unwrap() error
 	})
@@ -112,18 +145,20 @@ func Unwrap(err error) error {
 }
 
 func Tags(err error) []Tag {
-	tags := make([]Tag, 0)
-	var e error = err
-	for {
+	tags := make(map[string]Tag)
+	travel(err, func(e error) bool {
 		if e, ok := e.(*Error); ok {
-			tags = append(tags, e.tags...)
+			for _, t := range e.tags {
+				tags[t.String()] = t
+			}
 		}
-		e = Unwrap(e)
-		if e == nil {
-			break
-		}
+		return true
+	})
+	tagsArray := make([]Tag, 0)
+	for _, v := range tags {
+		tagsArray = append(tagsArray, v)
 	}
-	return tags
+	return tagsArray
 }
 
 func HasTag(err error, tag Tag) bool {
@@ -141,18 +176,7 @@ func (err *Error) AddTags(tags ...Tag) *Error {
 }
 
 func (err *Error) Tags() []Tag {
-	tags := make([]Tag, 0)
-	var e error = err
-	for {
-		if e, ok := e.(*Error); ok {
-			tags = append(tags, e.tags...)
-		}
-		e = Unwrap(e)
-		if e == nil {
-			break
-		}
-	}
-	return tags
+	return Tags(err)
 }
 
 func (err *Error) HasTag(tag Tag) bool {
@@ -181,6 +205,9 @@ func (err *Error) Error() string {
 }
 
 func (err *Error) Unwrap() error {
+	if err == nil {
+		return nil
+	}
 	if err.parent != nil {
 		return err.parent
 	}
