@@ -156,6 +156,15 @@ func (err *Error) Error() string {
 	b := bytes.Buffer{}
 	b.WriteString(err.ErrorStack())
 	if err.parent != nil {
+		if er, ok := err.parent.(*Error); ok {
+			b.WriteString(fmt.Sprintf("From:\n%v", er))
+		} else {
+			b.WriteString(fmt.Sprintf("From:\n%v", er))
+			er := Unwrap(err)
+			if er != nil {
+				b.WriteString(fmt.Sprintf("From:\n%v", er))
+			}
+		}
 		b.WriteString(fmt.Sprintf("From:\n%v", err.parent))
 		b.WriteString("\n")
 	}
