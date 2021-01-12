@@ -29,11 +29,9 @@ type Error struct {
 	tags   []Tag
 }
 
-func NewFrom(e interface{}, parent error) *Error {
+func NewWithError(e interface{}, parent error) *Error {
 	var err error
 	switch e := e.(type) {
-	case *Error:
-		return e
 	case error:
 		err = e
 	default:
@@ -49,7 +47,7 @@ func NewFrom(e interface{}, parent error) *Error {
 }
 
 func New(e interface{}) *Error {
-	err := NewFrom(e, nil)
+	err := NewWithError(e, nil)
 	err.stack = err.stack[1:]
 	return err
 }
@@ -67,7 +65,7 @@ func Wrap(e interface{}) *Error {
 		if e, ok := e.(error); ok {
 			err1 = Unwrap(e)
 		}
-		err := NewFrom(e, err1)
+		err := NewWithError(e, err1)
 		err.stack = err.stack[1:]
 		return err
 	}
