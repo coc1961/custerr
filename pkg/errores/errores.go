@@ -154,9 +154,8 @@ func (e errorSack) Error() string {
 
 func ErrorStack(err error) error {
 	b := bytes.Buffer{}
-	errs := make([]error, 0)
+	b.WriteString("--------------------------------\n")
 	travelErrors(err, func(e error) bool {
-		errs = append(errs, e)
 		if er, ok := e.(*Error); ok {
 			b.WriteString(er.ErrorStack())
 		} else {

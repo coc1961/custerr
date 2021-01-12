@@ -36,14 +36,14 @@ func (frame *StackFrame) Func() *runtime.Func {
 }
 
 func (frame *StackFrame) String() string {
-	str := fmt.Sprintf("%s:%d (0x%x)\n", frame.File, frame.LineNumber, frame.ProgramCounter)
+	str := fmt.Sprintf("\t%s:%d (0x%x)\n", frame.File, frame.LineNumber, frame.ProgramCounter)
 
 	source, err := frame.SourceLine()
 	if err != nil {
 		return str
 	}
 
-	return str + fmt.Sprintf("\t%s: %s\n", frame.Name, source)
+	return str + fmt.Sprintf("\t\tCode := %s -> %s\n", frame.Name, source)
 }
 
 func (frame *StackFrame) SourceLine() (string, error) {
