@@ -93,21 +93,6 @@ func (err *Error) Error() string {
 	}
 	b.WriteString("\n")
 	return b.String()
-	/*
-		msg := err.Err.Error()
-
-		msg = fmt.Sprintf("%s\n%v", msg, string(err.Stack()))
-
-		if len(err.parent) > 0 {
-			for _, e := range err.parent {
-				msg = fmt.Sprintf("%sFrom:\n%v", msg, e)
-				msg += "\n"
-			}
-		}
-		msg += "\n"
-
-		return msg
-	*/
 }
 
 func (err *Error) Stack() []byte {
