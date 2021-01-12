@@ -38,7 +38,7 @@ func TestNew1(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := New(tt.args.e)
 			assert.NotNil(t, got)
-			fmt.Println(New("Other Error", got))
+			// fmt.Println(New("Other Error", got))
 			//os.Exit(0)
 		})
 	}
