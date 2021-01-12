@@ -1,4 +1,4 @@
-package errores
+package errors
 
 import (
 	"bytes"

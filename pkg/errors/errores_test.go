@@ -1,5 +1,5 @@
 // nolint
-package errores
+package errors
 
 import (
 	"errors"
