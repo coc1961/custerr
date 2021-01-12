@@ -83,32 +83,37 @@ func Errorf(format string, a ...interface{}) *Error {
 }
 
 func (err *Error) Error() string {
-
-	msg := err.Err.Error()
-
-	msg = fmt.Sprintf("%s\n%v", msg, string(err.Stack()))
-
+	b := bytes.Buffer{}
+	b.WriteString(err.ErrorStack())
 	if len(err.parent) > 0 {
 		for _, e := range err.parent {
-			msg = fmt.Sprintf("%sFrom:\n%v", msg, e)
-			msg += "\n"
+			b.WriteString(fmt.Sprintf("From:\n%v", e))
+			b.WriteString("\n")
 		}
 	}
-	msg += "\n"
+	b.WriteString("\n")
+	return b.String()
+	/*
+		msg := err.Err.Error()
 
-	return msg
+		msg = fmt.Sprintf("%s\n%v", msg, string(err.Stack()))
+
+		if len(err.parent) > 0 {
+			for _, e := range err.parent {
+				msg = fmt.Sprintf("%sFrom:\n%v", msg, e)
+				msg += "\n"
+			}
+		}
+		msg += "\n"
+
+		return msg
+	*/
 }
 
 func (err *Error) Stack() []byte {
 	buf := bytes.Buffer{}
 
 	for _, frame := range err.StackFrames() {
-		/*
-			if strings.Contains(frame.String(), "/runtime/") ||
-				strings.Contains(frame.String(), "/testing/") {
-				continue
-			}
-		*/
 		buf.WriteString(frame.String())
 	}
 
@@ -120,7 +125,7 @@ func (err *Error) Callers() []uintptr {
 }
 
 func (err *Error) ErrorStack() string {
-	return err.TypeName() + " " + err.Error() + "\n" + string(err.Stack())
+	return err.TypeName() + " " + err.Err.Error() + "\n" + string(err.Stack())
 }
 
 func (err *Error) StackFrames() []errors.StackFrame {
