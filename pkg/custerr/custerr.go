@@ -12,6 +12,10 @@ import (
 
 var MaxStackDepth = 50
 
+type StackFrame struct {
+	errors.StackFrame
+}
+
 type Tag string
 
 func (t Tag) String() string {
@@ -25,7 +29,7 @@ type Error struct {
 	Err    error
 	parent error
 	stack  []uintptr
-	frames []errors.StackFrame
+	frames []StackFrame
 	tags   []Tag
 }
 
@@ -197,16 +201,16 @@ func (err *Error) ErrorStack() string {
 	return err.TypeName() + " " + err.Err.Error() + "\n" + string(err.Stack())
 }
 
-func (err *Error) StackFrames() []errors.StackFrame {
+func (err *Error) StackFrames() []StackFrame {
 	if err.frames == nil {
-		err.frames = make([]errors.StackFrame, len(err.stack))
+		err.frames = make([]StackFrame, len(err.stack))
 
 		for i, pc := range err.stack {
-			err.frames[i] = errors.NewStackFrame(pc)
+			err.frames[i] = StackFrame{errors.NewStackFrame(pc)}
 		}
 	}
 
-	return err.frames
+	return []StackFrame(err.frames)
 }
 
 func (err *Error) TypeName() string {
