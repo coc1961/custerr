@@ -82,27 +82,24 @@ func Is(e error, original interface{}) bool {
 			return e.HasTag(ori)
 		}
 	case error:
-		found := false
-		travelErrors(e, func(e error) bool {
+		found := !travelErrors(e, func(e error) bool {
 			if e == ori {
-				found = true
 				return false
 			}
 			if e, ok := e.(*Error); ok {
 				if Is(e.Err, ori) {
-					found = true
 					return false
 				}
 			}
 
 			if ori, ok := original.(*Error); ok {
 				if Is(e, ori.Err) {
-					found = true
 					return false
 				}
 			}
 			return true
 		})
+
 		return found
 	}
 	return false
