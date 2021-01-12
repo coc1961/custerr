@@ -143,6 +143,7 @@ func TestError_Error(t *testing.T) {
 	err1 := fmt.Errorf("other test %w", err)
 
 	e := ErrorStack(err1).Error()
+	fmt.Println(e)
 
 	if !strings.Contains(e, "/errores_test.go:") {
 		t.Error("TestError_Error error")

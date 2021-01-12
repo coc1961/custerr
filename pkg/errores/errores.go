@@ -162,7 +162,7 @@ func ErrorStack(err error) error {
 		} else {
 			b.WriteString(reflect.TypeOf(e).String() + " " + e.Error() + "\n")
 		}
-		b.WriteString("\n")
+		b.WriteString("--------------------------------\n")
 		return true
 	})
 	return errorSack(b.String())
