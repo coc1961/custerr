@@ -50,7 +50,7 @@ func TestNew1(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := New(tt.args.e, tt.args.parent)
+			got := NewFrom(tt.args.e, tt.args.parent)
 			assert.NotNil(t, got)
 			/*
 				fmt.Println(tt.name, "===================================")
@@ -103,7 +103,7 @@ func TestIs(t *testing.T) {
 
 func TestError_Unwrap(t *testing.T) {
 	baseError := errors.New("base")
-	err := New("new error", baseError)
+	err := NewFrom("new error", baseError)
 	err1 := New("new error")
 	if err.Unwrap() != baseError {
 		t.Error("TestError_Unwrap error")
@@ -115,10 +115,11 @@ func TestError_Unwrap(t *testing.T) {
 
 func TestError_Error(t *testing.T) {
 	baseError := errors.New("base")
-	err := New("new error", baseError)
+	err := NewFrom("new error", baseError)
 
 	e := err.Error()
 
+	fmt.Println(e)
 	if !strings.Contains(e, "/custerr/custerr_test.go:") {
 		t.Error("TestError_Error error")
 	}
@@ -128,7 +129,7 @@ func TestError_Error(t *testing.T) {
 	if !strings.Contains(e, "base") {
 		t.Error("TestError_Error error")
 	}
-	if !strings.Contains(e, "err := New(\"new error\", baseError)") {
+	if !strings.Contains(e, `err := NewFrom("new error", baseError)`) {
 		t.Error("TestError_Error error")
 	}
 }
@@ -172,7 +173,7 @@ func callersSkip(skip int) []uintptr {
 
 func TestError_HasTag(t *testing.T) {
 	err1 := New("error1").AddTags(Tag("database_error"))
-	err2 := New("error2", err1).AddTags("service_error")
+	err2 := NewFrom("error2", err1).AddTags("service_error")
 	if !err1.HasTag(Tag("database_error")) {
 		t.Error("TestError_HasTag error")
 	}
@@ -195,7 +196,7 @@ func TestError_HasTag(t *testing.T) {
 
 func TestError_Tags(t *testing.T) {
 	err1 := New("error1").AddTags(Tag("database_error"))
-	err2 := New("error2", err1).AddTags("service_error")
+	err2 := NewFrom("error2", err1).AddTags("service_error")
 	err3 := fmt.Errorf("error3 %w", err2)
 
 	if len(Wrap(err3).Tags()) != 2 {
@@ -205,7 +206,7 @@ func TestError_Tags(t *testing.T) {
 
 func TestHasTag(t *testing.T) {
 	err1 := New("error1").AddTags(Tag("database_error"))
-	err2 := New("error2", err1).AddTags("service_error")
+	err2 := NewFrom("error2", err1).AddTags("service_error")
 	if !HasTag(err1, Tag("database_error")) {
 		t.Error("TestError_HasTag error")
 	}
@@ -228,7 +229,7 @@ func TestHasTag(t *testing.T) {
 
 func TestTags(t *testing.T) {
 	err1 := New("error1").AddTags(Tag("database_error"))
-	err2 := New("error2", err1).AddTags("service_error")
+	err2 := NewFrom("error2", err1).AddTags("service_error")
 	err3 := fmt.Errorf("error3 %w", err2)
 
 	if len(Tags(err3)) != 2 {

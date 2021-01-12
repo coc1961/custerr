@@ -29,26 +29,27 @@ type Error struct {
 	tags   []Tag
 }
 
-func New(e interface{}, parent ...error) *Error {
+func NewFrom(e interface{}, parent error) *Error {
 	var err error
-
 	switch e := e.(type) {
 	case error:
 		err = e
 	default:
 		err = fmt.Errorf("%v", e)
 	}
-	var parent1 error
-	if len(parent) > 0 {
-		parent1 = parent[0]
-	}
 	stack := make([]uintptr, MaxStackDepth)
 	length := runtime.Callers(2, stack[:])
 	return &Error{
 		Err:    err,
 		stack:  stack[:length],
-		parent: parent1,
+		parent: parent,
 	}
+}
+
+func New(e interface{}) *Error {
+	err := NewFrom(e, nil)
+	err.stack = err.stack[1:]
+	return err
 }
 
 func Wrap(e interface{}) *Error {
@@ -64,7 +65,7 @@ func Wrap(e interface{}) *Error {
 		if e, ok := e.(error); ok {
 			err1 = Unwrap(e)
 		}
-		err := New(e, err1)
+		err := NewFrom(e, err1)
 		err.stack = err.stack[1:]
 		return err
 	}
