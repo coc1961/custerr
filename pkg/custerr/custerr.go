@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strings"
 
 	"github.com/go-errors/errors"
 )
@@ -13,7 +14,7 @@ var MaxStackDepth = 50
 
 type Error struct {
 	Err    error
-	parent []error
+	parent error
 	stack  []uintptr
 	frames []errors.StackFrame
 }
@@ -27,78 +28,88 @@ func New(e interface{}, parent ...error) *Error {
 	default:
 		err = fmt.Errorf("%v", e)
 	}
-
+	var parent1 error
+	if len(parent) > 0 {
+		parent1 = parent[0]
+	}
 	stack := make([]uintptr, MaxStackDepth)
 	length := runtime.Callers(2, stack[:])
 	return &Error{
 		Err:    err,
 		stack:  stack[:length],
-		parent: parent,
+		parent: parent1,
 	}
 }
 
-func Wrap(e interface{}, skip int) *Error {
+func Wrap(e interface{}) *Error {
 	if e == nil {
 		return nil
 	}
 
-	var err error
-
 	switch e := e.(type) {
 	case *Error:
 		return e
-	case error:
-		err = e
 	default:
-		err = fmt.Errorf("%v", e)
-	}
-
-	stack := make([]uintptr, MaxStackDepth)
-	length := runtime.Callers(2+skip, stack[:])
-	return &Error{
-		Err:   err,
-		stack: stack[:length],
+		err := New(e)
+		err.stack = err.stack[1:]
+		return err
 	}
 }
 
 func Is(e error, original error) bool {
+	for {
+		if e == original {
+			return true
+		}
+		if e, ok := e.(*Error); ok {
+			return Is(e.Err, original)
+		}
 
-	if e == original {
-		return true
+		if original, ok := original.(*Error); ok {
+			return Is(e, original.Err)
+		}
+		if e = Unwrap(e); e == nil {
+			return false
+		}
 	}
-
-	if e, ok := e.(*Error); ok {
-		return Is(e.Err, original)
-	}
-
-	if original, ok := original.(*Error); ok {
-		return Is(e, original.Err)
-	}
-
-	return false
 }
 
-func Errorf(format string, a ...interface{}) *Error {
-	return Wrap(fmt.Errorf(format, a...), 1)
+func Unwrap(err error) error {
+	u, ok := err.(interface {
+		Unwrap() error
+	})
+	if !ok {
+		return nil
+	}
+	return u.Unwrap()
 }
 
 func (err *Error) Error() string {
 	b := bytes.Buffer{}
 	b.WriteString(err.ErrorStack())
-	if len(err.parent) > 0 {
-		for _, e := range err.parent {
-			b.WriteString(fmt.Sprintf("From:\n%v", e))
-			b.WriteString("\n")
-		}
+	if err.parent != nil {
+		b.WriteString(fmt.Sprintf("From:\n%v", err.parent))
+		b.WriteString("\n")
 	}
 	b.WriteString("\n")
 	return b.String()
+}
+
+func (err *Error) Unwrap() error {
+	if err.parent != nil {
+		return err.parent
+	}
+	return nil
 }
 
 func (err *Error) Stack() []byte {
 	buf := bytes.Buffer{}
 
 	for _, frame := range err.StackFrames() {
+		if strings.Contains(frame.String(), "/runtime/") ||
+			strings.Contains(frame.String(), "/testing/") {
+			continue
+		}
 		buf.WriteString(frame.String())
 	}
 
