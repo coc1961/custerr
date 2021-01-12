@@ -144,7 +144,7 @@ func TestError_Error(t *testing.T) {
 
 	e := ErrorStack(err1).Error()
 
-	if !strings.Contains(e, "/custerr_test.go:") {
+	if !strings.Contains(e, "/errores_test.go:") {
 		t.Error("TestError_Error error")
 	}
 	if !strings.Contains(e, "base") {
