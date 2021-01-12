@@ -79,7 +79,7 @@ func Is(e error, original error) bool {
 }
 
 func Errorf(format string, a ...interface{}) *Error {
-	return Wrap(fmt.Errorf(format, a...), 2)
+	return Wrap(fmt.Errorf(format, a...), 1)
 }
 
 func (err *Error) Error() string {

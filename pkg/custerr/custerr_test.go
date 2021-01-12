@@ -59,7 +59,7 @@ func TestStackFormat(t *testing.T) {
 
 		bs := [][]uintptr{e.stack, expected}
 
-		if err := compareStacks(bs[0][2:], bs[1][3:]); err != nil {
+		if err := compareStacks(bs[0][2:], bs[1][2:]); err != nil {
 
 			t.Errorf("Stack didn't match %v %v", bs[0], bs[1])
 
