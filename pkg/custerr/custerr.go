@@ -32,6 +32,8 @@ type Error struct {
 func NewFrom(e interface{}, parent error) *Error {
 	var err error
 	switch e := e.(type) {
+	case *Error:
+		return e
 	case error:
 		err = e
 	default:
