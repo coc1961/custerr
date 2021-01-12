@@ -198,5 +198,40 @@ func TestError_Tags(t *testing.T) {
 	err2 := New("error2", err1).AddTags("service_error")
 	err3 := fmt.Errorf("error3 %w", err2)
 
-	fmt.Println(Wrap(err3).Tags())
+	if len(Wrap(err3).Tags()) != 2 {
+		t.Error("TestError_Tags")
+	}
+}
+
+func TestHasTag(t *testing.T) {
+	err1 := New("error1").AddTags(Tag("database_error"))
+	err2 := New("error2", err1).AddTags("service_error")
+	if !HasTag(err1, Tag("database_error")) {
+		t.Error("TestError_HasTag error")
+	}
+	if !HasTag(err2, Tag("database_error")) {
+		t.Error("TestError_HasTag error")
+	}
+	if HasTag(err1, Tag("error_tag")) {
+		t.Error("TestError_HasTag error")
+	}
+	if HasTag(err2, Tag("error_tag")) {
+		t.Error("TestError_HasTag error")
+	}
+	if HasTag(err1, Tag("service_error")) {
+		t.Error("TestError_HasTag error")
+	}
+	if !HasTag(err2, Tag("service_error")) {
+		t.Error("TestError_HasTag error")
+	}
+}
+
+func TestTags(t *testing.T) {
+	err1 := New("error1").AddTags(Tag("database_error"))
+	err2 := New("error2", err1).AddTags("service_error")
+	err3 := fmt.Errorf("error3 %w", err2)
+
+	if len(Tags(err3)) != 2 {
+		t.Error("TestError_Tags")
+	}
 }

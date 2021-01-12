@@ -98,6 +98,30 @@ func Unwrap(err error) error {
 	return u.Unwrap()
 }
 
+func Tags(err error) []Tag {
+	tags := make([]Tag, 0)
+	var e error = err
+	for {
+		if e, ok := e.(*Error); ok {
+			tags = append(tags, e.tags...)
+		}
+		e = Unwrap(e)
+		if e == nil {
+			break
+		}
+	}
+	return tags
+}
+
+func HasTag(err error, tag Tag) bool {
+	for _, t := range Wrap(err).Tags() {
+		if t.Is(tag) {
+			return true
+		}
+	}
+	return false
+}
+
 func (err *Error) AddTags(tags ...Tag) *Error {
 	err.tags = append(err.tags, tags...)
 	return err
