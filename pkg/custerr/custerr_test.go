@@ -135,13 +135,9 @@ func TestError_Error(t *testing.T) {
 	err := NewWithError("new error", baseError)
 	err1 := fmt.Errorf("other test %w", err)
 
-	e := err1.Error()
+	e := ErrorStack(err1).Error()
 
-	fmt.Println(e)
 	if !strings.Contains(e, "/custerr/custerr_test.go:") {
-		t.Error("TestError_Error error")
-	}
-	if !strings.Contains(e, "From:") {
 		t.Error("TestError_Error error")
 	}
 	if !strings.Contains(e, "base") {

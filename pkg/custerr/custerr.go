@@ -158,6 +158,28 @@ func Tags(err error) []Tag {
 	return tagsArray
 }
 
+type errorSack string
+
+func (e errorSack) Error() string {
+	return string(e)
+}
+
+func ErrorStack(err error) error {
+	b := bytes.Buffer{}
+	errs := make([]error, 0)
+	travelErrors(err, func(e error) bool {
+		errs = append(errs, e)
+		if er, ok := e.(*Error); ok {
+			b.WriteString(er.ErrorStack())
+		} else {
+			b.WriteString(reflect.TypeOf(e).String() + " " + e.Error() + "\n")
+		}
+		b.WriteString("\n")
+		return true
+	})
+	return errorSack(b.String())
+}
+
 func HasTag(err error, tag Tag) bool {
 	for _, t := range Wrap(err).Tags() {
 		if t.Is(tag) {
@@ -186,19 +208,22 @@ func (err *Error) HasTag(tag Tag) bool {
 }
 
 func (err *Error) Error() string {
-	b := bytes.Buffer{}
-	b.WriteString(err.ErrorStack())
-	if err.parent != nil {
-		if er, ok := err.parent.(*Error); ok {
-			b.WriteString(fmt.Sprintf("From:\n%v", er))
-		} else {
-			b.WriteString(fmt.Sprintf("From:\n%v\n", err.Err))
+	return err.Err.Error()
+	/*
+		b := bytes.Buffer{}
+		b.WriteString(err.ErrorStack())
+		if err.parent != nil {
+			if er, ok := err.parent.(*Error); ok {
+				b.WriteString(fmt.Sprintf("From:\n%v", er))
+			} else {
+				b.WriteString(fmt.Sprintf("From:\n%v\n", err.Err))
+			}
+			b.WriteString(fmt.Sprintf("From:\n%v", err.parent))
+			b.WriteString("\n")
 		}
-		b.WriteString(fmt.Sprintf("From:\n%v", err.parent))
 		b.WriteString("\n")
-	}
-	b.WriteString("\n")
-	return b.String()
+		return b.String()
+	*/
 }
 
 func (err *Error) Unwrap() error {
