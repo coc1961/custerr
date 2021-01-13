@@ -7,9 +7,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	errors1 "github.com/go-errors/errors"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
@@ -38,7 +35,9 @@ func TestNew(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewWithError(tt.args.e, tt.args.parent)
-			assert.NotNil(t, got)
+			if got == nil {
+				t.Error("Error TestNew")
+			}
 		})
 	}
 }
@@ -143,10 +142,10 @@ func TestError_Callers(t *testing.T) {
 
 	arr1, arr2 := make([]int, 0), make([]int, 0)
 	for _, pc := range c1 {
-		arr1 = append(arr1, errors1.NewStackFrame(pc).LineNumber)
+		arr1 = append(arr1, NewStackFrame(pc).LineNumber)
 	}
 	for _, pc := range c2 {
-		arr2 = append(arr2, errors1.NewStackFrame(pc).LineNumber)
+		arr2 = append(arr2, NewStackFrame(pc).LineNumber)
 	}
 
 	if err := compareStacks(arr1, arr2); err != nil {
