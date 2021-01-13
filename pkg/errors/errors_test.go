@@ -280,3 +280,16 @@ func Test_travelErrors(t *testing.T) {
 		t.Error("Test_travelErrors error")
 	}
 }
+
+func TestTag(t *testing.T) {
+	tag := Tag("test")
+
+	switch tag {
+	case Tag("test"):
+		// Ok
+	case Tag("test1"):
+		t.Error("TestTag")
+	default:
+		t.Error("TestTag")
+	}
+}
