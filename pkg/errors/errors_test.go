@@ -14,7 +14,7 @@ import (
 
 func TestNew(t *testing.T) {
 	type args struct {
-		e      interface{}
+		e      string
 		parent error
 	}
 	tests := []struct {
@@ -28,30 +28,10 @@ func TestNew(t *testing.T) {
 			},
 		},
 		{
-			name: "New From Error",
-			args: args{
-				e: errors.New("test error"),
-			},
-		},
-		{
 			name: "New From string with parent",
 			args: args{
 				e:      "test error",
 				parent: errors.New("parent"),
-			},
-		},
-		{
-			name: "New From Error with parent",
-			args: args{
-				e:      errors.New("test error"),
-				parent: errors.New("parent"),
-			},
-		},
-		{
-			name: "New From Error with parent",
-			args: args{
-				e:      fmt.Errorf("error1 %w", errors.New("test error")),
-				parent: nil,
 			},
 		},
 	}
@@ -83,9 +63,9 @@ func TestIs(t *testing.T) {
 	otherError := errors.New("base")
 	base1Error := fmt.Errorf("error1 %w", baseError)
 
-	err1 := New(baseError).AddTags(Tag("test_tag"))
-	err2 := New(err1)
-	err3 := New(err2)
+	err1 := NewWithError("baseError", baseError).AddTags(Tag("test_tag"))
+	err2 := NewWithError("err1", err1)
+	err3 := NewWithError("err2", err2)
 
 	if !Is(base1Error, baseError) {
 		t.Error("TestIs error")
@@ -144,6 +124,8 @@ func TestError_Error(t *testing.T) {
 
 	e := ErrorStack(err1).Error()
 	frame := NewStackFrame(c[0])
+
+	fmt.Println(e)
 
 	if !strings.Contains(e, fmt.Sprintf("%s:%d", frame.File, frame.LineNumber)) {
 		t.Error("TestError_Error error")
@@ -216,7 +198,7 @@ func TestError_HasTag(t *testing.T) {
 	}
 
 	err3 := New("error1").AddTags(Tag("database_error"))
-	err4 := New(err3)
+	err4 := NewWithError("err3", err3)
 	if !err4.HasTag(Tag("database_error")) {
 		t.Error("TestError_HasTag error")
 	}
