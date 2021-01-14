@@ -7,14 +7,11 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	errors1 "github.com/go-errors/errors"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
 	type args struct {
-		e      interface{}
+		e      string
 		parent error
 	}
 	tests := []struct {
@@ -28,37 +25,19 @@ func TestNew(t *testing.T) {
 			},
 		},
 		{
-			name: "New From Error",
-			args: args{
-				e: errors.New("test error"),
-			},
-		},
-		{
 			name: "New From string with parent",
 			args: args{
 				e:      "test error",
 				parent: errors.New("parent"),
 			},
 		},
-		{
-			name: "New From Error with parent",
-			args: args{
-				e:      errors.New("test error"),
-				parent: errors.New("parent"),
-			},
-		},
-		{
-			name: "New From Error with parent",
-			args: args{
-				e:      fmt.Errorf("error1 %w", errors.New("test error")),
-				parent: nil,
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewWithError(tt.args.e, tt.args.parent)
-			assert.NotNil(t, got)
+			if got == nil {
+				t.Error("Error TestNew")
+			}
 		})
 	}
 }
@@ -83,9 +62,9 @@ func TestIs(t *testing.T) {
 	otherError := errors.New("base")
 	base1Error := fmt.Errorf("error1 %w", baseError)
 
-	err1 := New(baseError).AddTags(Tag("test_tag"))
-	err2 := New(err1)
-	err3 := New(err2)
+	err1 := NewWithError("baseError", baseError).AddTags(Tag("test_tag"))
+	err2 := NewWithError("err1", err1)
+	err3 := NewWithError("err2", err2)
 
 	if !Is(base1Error, baseError) {
 		t.Error("TestIs error")
@@ -145,6 +124,8 @@ func TestError_Error(t *testing.T) {
 	e := ErrorStack(err1).Error()
 	frame := NewStackFrame(c[0])
 
+	fmt.Println(e)
+
 	if !strings.Contains(e, fmt.Sprintf("%s:%d", frame.File, frame.LineNumber)) {
 		t.Error("TestError_Error error")
 	}
@@ -161,10 +142,10 @@ func TestError_Callers(t *testing.T) {
 
 	arr1, arr2 := make([]int, 0), make([]int, 0)
 	for _, pc := range c1 {
-		arr1 = append(arr1, errors1.NewStackFrame(pc).LineNumber)
+		arr1 = append(arr1, NewStackFrame(pc).LineNumber)
 	}
 	for _, pc := range c2 {
-		arr2 = append(arr2, errors1.NewStackFrame(pc).LineNumber)
+		arr2 = append(arr2, NewStackFrame(pc).LineNumber)
 	}
 
 	if err := compareStacks(arr1, arr2); err != nil {
@@ -216,7 +197,7 @@ func TestError_HasTag(t *testing.T) {
 	}
 
 	err3 := New("error1").AddTags(Tag("database_error"))
-	err4 := New(err3)
+	err4 := NewWithError("err3", err3)
 	if !err4.HasTag(Tag("database_error")) {
 		t.Error("TestError_HasTag error")
 	}

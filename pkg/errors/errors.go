@@ -20,42 +20,31 @@ func (t Tag) Is(tag interface{}) bool {
 }
 
 type Error struct {
-	Err    error
+	Err    string
 	parent error
 	stack  []uintptr
 	frames []StackFrame
 	tags   []Tag
 }
 
-func NewWithError(e interface{}, parent error) *Error {
-	var err error
-	switch e := e.(type) {
-	case error:
-		err = e
-		e2 := Unwrap(err)
-		if e2 != nil && parent == nil {
-			parent = e2
-		}
-	default:
-		err = fmt.Errorf("%v", e)
-	}
+func NewWithError(e string, parent error) *Error {
 	stack := make([]uintptr, MaxStackDepth)
 	length := runtime.Callers(2, stack[:])
 
 	return &Error{
-		Err:    err,
+		Err:    e,
 		stack:  stack[:length],
 		parent: parent,
 	}
 }
 
-func New(e interface{}) *Error {
+func New(e string) *Error {
 	err := NewWithError(e, nil)
 	err.stack = err.stack[1:]
 	return err
 }
 
-func Wrap(e interface{}) *Error {
+func Wrap(e error) *Error {
 	if e == nil {
 		return nil
 	}
@@ -68,7 +57,7 @@ func Wrap(e interface{}) *Error {
 		if e, ok := e.(error); ok {
 			err1 = Unwrap(e)
 		}
-		err := NewWithError(e, err1)
+		err := NewWithError(e.Error(), err1)
 		err.stack = err.stack[1:]
 		return err
 	}
@@ -85,15 +74,12 @@ func Is(e error, original interface{}) bool {
 			if e == ori {
 				return false
 			}
-			if e, ok := e.(*Error); ok {
-				if Is(e.Err, ori) {
-					return false
-				}
-			}
 
 			if ori, ok := original.(*Error); ok {
-				if Is(e, ori.Err) {
-					return false
+				if ori.parent != nil {
+					if Is(e, ori.parent) {
+						return false
+					}
 				}
 			}
 			return true
@@ -131,9 +117,6 @@ func Tags(err error) []Tag {
 	travelErrors(err, func(e error) bool {
 		if e, ok := e.(*Error); ok {
 			for _, t := range e.tags {
-				tags[t.String()] = t
-			}
-			for _, t := range Tags(e.Err) {
 				tags[t.String()] = t
 			}
 		}
@@ -195,14 +178,14 @@ func (err *Error) HasTag(tag Tag) bool {
 }
 
 func (err *Error) Error() string {
-	return err.Err.Error()
+	return err.Err
 }
 
 func (err *Error) Unwrap() error {
 	if err.parent != nil {
 		return err.parent
 	}
-	return Unwrap(err.Err)
+	return nil
 }
 
 func (err *Error) Stack() []byte {
@@ -224,7 +207,7 @@ func (err *Error) Callers() []uintptr {
 }
 
 func (err *Error) ErrorStack() string {
-	return "type: " + err.TypeName() + " tags: " + fmt.Sprint(err.Tags()) + " error: " + err.Err.Error() + "\n" + string(err.Stack())
+	return "type: " + err.TypeName() + " tags: " + fmt.Sprint(err.Tags()) + " error: " + err.Err + "\n" + string(err.Stack())
 }
 
 func (err *Error) StackFrames() []StackFrame {
@@ -240,5 +223,5 @@ func (err *Error) StackFrames() []StackFrame {
 }
 
 func (err *Error) TypeName() string {
-	return reflect.TypeOf(err.Err).String()
+	return reflect.TypeOf(err).String()
 }
