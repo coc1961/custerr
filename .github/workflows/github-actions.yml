@@ -1,9 +1,14 @@
 name: Go
 on:
   push:
-#    branches: [ $default-branch ]
-  pull_request:
-#    branches: [ $default-branch ]
+#    branches:  
+#      - master
+#      - feature/**
+#      - release/**
+#  pull_request:
+#    branches:  
+#      - feature/**
+#      - release/**
 jobs:
   build:
     runs-on: ubuntu-latest
