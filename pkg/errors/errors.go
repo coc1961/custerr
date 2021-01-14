@@ -20,7 +20,7 @@ func (t Tag) Is(tag interface{}) bool {
 }
 
 type Error struct {
-	Err    string
+	msg    string
 	parent error
 	stack  []uintptr
 	frames []StackFrame
@@ -32,7 +32,7 @@ func NewWithError(e string, parent error) *Error {
 	length := runtime.Callers(2, stack[:])
 
 	return &Error{
-		Err:    e,
+		msg:    e,
 		stack:  stack[:length],
 		parent: parent,
 	}
@@ -178,7 +178,7 @@ func (err *Error) HasTag(tag Tag) bool {
 }
 
 func (err *Error) Error() string {
-	return err.Err
+	return err.msg
 }
 
 func (err *Error) Unwrap() error {
@@ -207,7 +207,7 @@ func (err *Error) Callers() []uintptr {
 }
 
 func (err *Error) ErrorStack() string {
-	return err.TypeName() + " tags: " + fmt.Sprint(err.Tags()) + " error: " + err.Err + "\n" + string(err.Stack())
+	return err.TypeName() + " tags: " + fmt.Sprint(err.Tags()) + " error: " + err.msg + "\n" + string(err.Stack())
 }
 
 func (err *Error) StackFrames() []StackFrame {
