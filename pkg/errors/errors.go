@@ -70,7 +70,7 @@ func Is(e error, original interface{}) bool {
 			return e.HasTag(ori)
 		}
 	case error:
-		found := !travelErrors(e, func(e error) bool {
+		found := !goThroughErrors(e, func(e error) bool {
 			if e == ori {
 				return false
 			}
@@ -90,12 +90,12 @@ func Is(e error, original interface{}) bool {
 	return false
 }
 
-func travelErrors(e error, fn func(e error) bool) bool {
+func goThroughErrors(e error, fn func(e error) bool) bool {
 	if !fn(e) {
 		return false
 	}
 	if e := Unwrap(e); e != nil {
-		if !travelErrors(e, fn) {
+		if !goThroughErrors(e, fn) {
 			return false
 		}
 	}
@@ -114,7 +114,7 @@ func Unwrap(err error) error {
 
 func Tags(err error) []Tag {
 	tags := make(map[string]Tag)
-	travelErrors(err, func(e error) bool {
+	goThroughErrors(err, func(e error) bool {
 		if e, ok := e.(*Error); ok {
 			for _, t := range e.tags {
 				tags[t.String()] = t
@@ -138,7 +138,7 @@ func (e errorSack) Error() string {
 func ErrorStack(err error) error {
 	b := bytes.Buffer{}
 	b.WriteString("--------------------------------\n")
-	travelErrors(err, func(e error) bool {
+	goThroughErrors(err, func(e error) bool {
 		if er, ok := e.(*Error); ok {
 			b.WriteString(er.ErrorStack())
 		} else {

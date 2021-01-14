@@ -247,13 +247,13 @@ func TestTags(t *testing.T) {
 	}
 }
 
-func Test_travelErrors(t *testing.T) {
+func Test_goThroughErrors(t *testing.T) {
 	err1 := New("error1")
 	err2 := NewWithError("error2", err1)
 	err3 := fmt.Errorf("error3 %w", err2)
 
 	mp := make([]error, 0)
-	travelErrors(err3, func(e error) bool {
+	goThroughErrors(err3, func(e error) bool {
 		mp = append(mp, e)
 		return true
 	})
