@@ -118,7 +118,7 @@ func TestError_Unwrap(t *testing.T) {
 
 func TestError_Error(t *testing.T) {
 	baseError := errors.New("base")
-	err, c := NewWithError("new error", baseError), callers()
+	err, c := NewWithError("new error", baseError).AddTags("test_tag").AddTags("test_tag_1"), callers()
 	err1 := fmt.Errorf("other test %w", err)
 
 	e := ErrorStack(err1).Error()
@@ -132,7 +132,7 @@ func TestError_Error(t *testing.T) {
 	if !strings.Contains(e, "base") {
 		t.Error("TestError_Error error")
 	}
-	if !strings.Contains(e, `err, c := NewWithError("new error", baseError), callers()`) {
+	if !strings.Contains(e, `NewWithError("new error", baseError)`) {
 		t.Error("TestError_Error error")
 	}
 }

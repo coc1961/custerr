@@ -207,7 +207,7 @@ func (err *Error) Callers() []uintptr {
 }
 
 func (err *Error) ErrorStack() string {
-	return "type: " + err.TypeName() + " tags: " + fmt.Sprint(err.Tags()) + " error: " + err.Err + "\n" + string(err.Stack())
+	return err.TypeName() + " tags: " + fmt.Sprint(err.Tags()) + " error: " + err.Err + "\n" + string(err.Stack())
 }
 
 func (err *Error) StackFrames() []StackFrame {

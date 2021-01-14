@@ -43,7 +43,7 @@ func (frame *StackFrame) String() string {
 		return str
 	}
 
-	return str + fmt.Sprintf("\t\tCode := %s -> %s\n", frame.Name, source)
+	return str + fmt.Sprintf("\t\t%s() -> %s\n", frame.Name, source)
 }
 
 func (frame *StackFrame) SourceLine() (string, error) {
