@@ -91,6 +91,9 @@ func Is(e error, original interface{}) bool {
 }
 
 func goThroughErrors(e error, fn func(e error) bool) bool {
+	if e == nil {
+		return true
+	}
 	if !fn(e) {
 		return false
 	}

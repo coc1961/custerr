@@ -101,6 +101,9 @@ func TestIs(t *testing.T) {
 	if Is(base1Error, nil) {
 		t.Error("TestIs error")
 	}
+	if Is(nil, nil) {
+		t.Error("TestIs error")
+	}
 
 }
 
@@ -258,6 +261,15 @@ func Test_goThroughErrors(t *testing.T) {
 		return true
 	})
 	if len(mp) != 3 {
+		t.Error("Test_travelErrors error")
+	}
+
+	mp = make([]error, 0)
+	goThroughErrors(nil, func(e error) bool {
+		mp = append(mp, e)
+		return true
+	})
+	if len(mp) != 0 {
 		t.Error("Test_travelErrors error")
 	}
 }
