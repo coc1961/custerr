@@ -122,20 +122,21 @@ func TestError_Unwrap(t *testing.T) {
 func TestError_Error(t *testing.T) {
 	baseError := errors.New("base")
 	err, c := NewWithError("new error", baseError).AddTags("test_tag").AddTags("test_tag_1"), callers()
-	err1 := fmt.Errorf("other test %w", err)
+	err1 := Wrap(fmt.Errorf("other test %w", err))
 
 	e := ErrorStack(err1).Error()
 	frame := NewStackFrame(c[0])
 
 	fmt.Println(e)
 
-	if !strings.Contains(e, fmt.Sprintf("%s:%d", frame.File, frame.LineNumber)) {
+	if !strings.Contains(e, frame.File) ||
+		!strings.Contains(e, fmt.Sprintf("%d", frame.LineNumber)) {
 		t.Error("TestError_Error error")
 	}
 	if !strings.Contains(e, "base") {
 		t.Error("TestError_Error error")
 	}
-	if !strings.Contains(e, `NewWithError("new error", baseError)`) {
+	if !strings.Contains(e, `NewWithError(\"new error\", baseError)`) {
 		t.Error("TestError_Error error")
 	}
 }

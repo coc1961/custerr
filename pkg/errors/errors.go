@@ -2,6 +2,7 @@ package errors
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -139,18 +140,32 @@ func (e errorSack) Error() string {
 }
 
 func ErrorStack(err error) error {
-	b := bytes.Buffer{}
-	b.WriteString("--------------------------------\n")
+	type ER struct {
+		Error string
+		Tags  []Tag
+		Stack [][]string
+	}
+	arr := []ER{}
 	goThroughErrors(err, func(e error) bool {
 		if er, ok := e.(*Error); ok {
-			b.WriteString(er.ErrorStack())
+			tmp := [][]string{}
+			for _, frame := range er.StackFrames() {
+				if strings.Contains(frame.String(), "/runtime/") ||
+					strings.Contains(frame.String(), "/testing/") {
+					continue
+				}
+				arr := strings.Split(strings.ReplaceAll(frame.String(), "\t", ""), "\n")
+				tmp = append(tmp, arr[0:len(arr)-1])
+			}
+
+			arr = append(arr, ER{Error: e.Error(), Tags: er.Tags(), Stack: tmp})
 		} else {
-			b.WriteString(reflect.TypeOf(e).String() + " " + e.Error() + "\n")
+			arr = append(arr, ER{Error: e.Error()})
 		}
-		b.WriteString("--------------------------------\n")
 		return true
 	})
-	return errorSack(b.String())
+	bb, _ := json.MarshalIndent(arr, " ", "  ")
+	return errorSack(string(bb))
 }
 
 func HasTag(err error, tag Tag) bool {
